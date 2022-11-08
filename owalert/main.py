@@ -3,6 +3,7 @@ from time import sleep
 import os
 
 API_KEY = os.getenv("API_KEY")
+SLEEP = 3600
 
 
 class OWAlertClass:
@@ -11,13 +12,15 @@ class OWAlertClass:
 
 
 def main():
-    ow_object = OWAlertClass(api_key=API_KEY, zipcode='02188', units='imperial')
-    hourly_weather = ow_object.owc.weather_data['hourly']
-    for hour in hourly_weather:
-        if 'alerts' in hour:
-            print(hour)
+    owalert_object = OWAlertClass(api_key=API_KEY, zipcode='02188', units='imperial')
+    while True:
+        hourly_weather = owalert_object.owc.weather_data['hourly']
+        for hour in hourly_weather:
+            if 'alerts' in hour:
+                print(hour)
+        sleep(SLEEP)
+        owalert_object.owc.update_weather()
 
 
 if __name__ == "__main__":
     main()
-
