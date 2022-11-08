@@ -28,3 +28,6 @@ readme = "README.md"
 authors = [
     { name = "Brian Hudson", email="reallybrianhudson@gmail.com" },
 ]
+
+[project.urls]
+"Homepage" = "https://github.com/bearhudson/OWAlert"
