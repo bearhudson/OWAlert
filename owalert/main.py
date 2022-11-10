@@ -15,17 +15,22 @@ class OWAlertClass:
 
 
 def main():
-    owalert_object = OWAlertClass(api_key=API_KEY, zipcode='92065', units='metric')
+    owalert_object = OWAlertClass(api_key=API_KEY, zipcode='02188', units='metric')
     while True:
         hourly_weather = owalert_object.owc.weather_data['hourly']
         for hour in hourly_weather[1:2]:
             for status in hour['weather']:
                 cur_code = int(status['id'])
                 if cur_code <= 622:
-                    print(owalert_object.owc.check_condition(cur_code))
-                    print(datetime.strftime(datetime.fromtimestamp(hour['dt']), '%H:%M'))
+                    precip_time = datetime.strftime(datetime.fromtimestamp(hour['dt']), '%H:%M')
+                    alert_text = f"Subject: Alert for {owalert_object.owc.zipcode}\n" \
+                                 f"Condition: {owalert_object.owc.check_condition(cur_code)}\n" \
+                                 f"Starting at: {precip_time}"
+                    print(alert_text)
             if 'alerts' in hour:
                 print(hour['alerts'])
+            else:
+                print(f"No alerts at this time. Currently: {str.title(owalert_object.owc.check_condition(cur_code))}")
         sleep(SLEEP)
         owalert_object.owc.update_weather()
 
