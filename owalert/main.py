@@ -1,8 +1,10 @@
 from openweatherclass import OpenWeatherClass
+import pushbullet
 from time import sleep
 from _datetime import datetime
 from datetime import timedelta
 import os
+
 
 API_KEY = os.getenv("API_KEY")
 SLEEP = 3600
@@ -15,9 +17,24 @@ class OWAlertClass:
         self.request_time = self.owc.weather_data['current']['dt']
         self.request_dt = datetime.fromtimestamp(self.request_time)
         self.expires_dt = self.request_dt + timedelta(hours=1)
+        self.email = os.environ.get('MY_EMAIL')
+        self.password = os.environ.get('MY_PASSWORD')
+        self.my_server = os.environ.get('MY_SERVER')
+        self.my_from = os.environ.get('MY_FROM')
+        self.pushbullet_obj = pushbullet.API()
+        self.pushbullet_obj.set_token(os.environ.get('PUSHBULLET_API'))
 
     def update_expiry(self, expires: int):
         self.expires_dt = datetime.fromtimestamp(expires)
+
+    def send_email(self, message):
+        print(self.request_time)
+        print(self.request_dt)
+        print(self.expires_dt)
+        print(self.is_alerted)
+        print(message)
+        self.pushbullet_obj.send_note("OWAlert", message)
+        self.is_alerted = True
 
 
 def main():
@@ -35,8 +52,8 @@ def main():
                          f"Start time: {datetime.strftime(start_dt, '%H:%M')} -- " \
                          f"End time: {datetime.strftime(owalert.expires_dt, '%H:%M')}\n" \
                          f"{description_txt}\n"
-            send_message(alert_text)
-            owalert.is_alerted = True
+            owalert.send_email(f"{description_title} for {owalert.owc.zipcode} "
+                               f"expires: {datetime.strftime(owalert.expires_dt, '%H:%M')}")
         else:
             for hour in hourly_weather[1:2]:
                 for status in hour['weather']:
@@ -46,20 +63,11 @@ def main():
                                       f"Condition: {owalert.owc.check_condition(cur_code)}\n " \
                                       f"Alert at: {datetime.strftime(owalert.request_dt, '%H:%M')}\n " \
                                       f"Expires at: {datetime.strftime(owalert.expires_dt, '%H:%M')}"
-                        send_message(precip_text)
-        # print(owalert.request_time)
-        # print(owalert.request_dt)
-        # print(owalert.expires_dt)
-        # print(owalert.is_alerted)
+                        owalert.send_email(precip_text)
         sleep(SLEEP)
         owalert.owc.update_weather()
         if owalert.expires_dt < owalert.request_dt:
             owalert.is_alerted = False
-
-
-def send_message(msg_text):
-    print(f"{msg_text}")
-    # TODO: Add mail notification function
 
 
 if __name__ == "__main__":
