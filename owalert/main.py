@@ -23,7 +23,6 @@ class OWAlertClass:
         self.pushbullet_obj = pushbullet.API()
         self.pushbullet_obj.set_token(os.environ.get('PUSHBULLET_API'))
         self.is_alerted: bool = False
-        self.string_hash = None
 
     def update_expiry(self, expires: float):
         self.expires_dt = datetime.fromtimestamp(expires)
@@ -41,7 +40,7 @@ def main():
             description_title = owalert.owc.weather_data['alerts'][0]['event']
             owalert.update_expiry(owalert.owc.weather_data['alerts'][0]['end'])
             owalert.send_push_notify(f"{description_title}", f"in {owalert.town} "
-                                     f"Expires: {datetime.strftime(owalert.expires_dt, '%H:%M')}")
+                                     f"Expires: {datetime.strftime(owalert.expires_dt, '%HH')}")
         else:
             for hour in hourly_weather[1:2]:
                 for status in hour['weather']:
@@ -51,7 +50,7 @@ def main():
                         owalert.update_expiry(ending)
                         owalert.send_push_notify(f"{str.title(owalert.owc.check_condition(cur_code))} in "
                                                  f"{owalert.town}",
-                                                 f"Ending~ {datetime.strftime(owalert.expires_dt, '%H:%M')}")
+                                                 f"Ending~ {datetime.strftime(owalert.expires_dt, '%HH')}")
         sleep(SLEEP)
         owalert.owc.update_weather()
         if owalert.expires_dt < owalert.request_dt:
