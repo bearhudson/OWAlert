@@ -27,7 +27,7 @@ class OWAlertClass:
     def update_expiry(self, expires: int):
         self.expires_dt = datetime.fromtimestamp(expires)
 
-    def send_email(self, message):
+    def send_push_notify(self, message):
         print(self.request_time)
         print(self.request_dt)
         print(self.expires_dt)
@@ -38,7 +38,7 @@ class OWAlertClass:
 
 
 def main():
-    owalert = OWAlertClass(api_key=API_KEY, zipcode='27208', units='metric')
+    owalert = OWAlertClass(api_key=API_KEY, zipcode='02188', units='metric')
     while True:
         hourly_weather = owalert.owc.weather_data['hourly']
         if 'alerts' in owalert.owc.weather_data and owalert.is_alerted is False:
@@ -52,8 +52,8 @@ def main():
                          f"Start time: {datetime.strftime(start_dt, '%H:%M')} -- " \
                          f"End time: {datetime.strftime(owalert.expires_dt, '%H:%M')}\n" \
                          f"{description_txt}\n"
-            owalert.send_email(f"{description_title} for {owalert.owc.zipcode} "
-                               f"expires: {datetime.strftime(owalert.expires_dt, '%H:%M')}")
+            owalert.send_push_notify(f"{description_title} for {owalert.owc.zipcode} "
+                                     f"Expires: {datetime.strftime(owalert.expires_dt, '%H:%M')}")
         else:
             for hour in hourly_weather[1:2]:
                 for status in hour['weather']:
@@ -63,7 +63,8 @@ def main():
                                       f"Condition: {owalert.owc.check_condition(cur_code)}\n " \
                                       f"Alert at: {datetime.strftime(owalert.request_dt, '%H:%M')}\n " \
                                       f"Expires at: {datetime.strftime(owalert.expires_dt, '%H:%M')}"
-                        owalert.send_email(precip_text)
+                        owalert.send_push_notify(f"{str.title(owalert.owc.check_condition(cur_code))} for "
+                                                 f"{owalert.owc.zipcode}\n")
         sleep(SLEEP)
         owalert.owc.update_weather()
         if owalert.expires_dt < owalert.request_dt:
