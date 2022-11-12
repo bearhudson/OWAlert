@@ -63,7 +63,7 @@ def get_location_name() -> str:
                             f"format=json&addressdetails=1&country={COUNTRY_CODE}")
     location.raise_for_status()
     location_json = location.json()
-    location_str = location_json[0]['display_name'].split(',')
+    location_str = location_json[-1]['display_name'].split(',')
     return location_str[0]
 
 
