@@ -40,13 +40,13 @@ class OWAlertClass:
         return f"{location_json[1]['address']['town']}"
 
     def precip_check(self, weather_slice: list) -> int:
-        counter = 0
+        until = weather_slice[0]['dt']
         for hour in weather_slice:
             if hour['weather'][0]['id'] <= 800:
-                counter += 1
+                until = hour['dt']
             else:
                 break
-        return counter
+        return until
 
 
 def main():
@@ -67,15 +67,19 @@ def main():
                     cur_code = int(status['id'])
                     if cur_code < 800 and owalert.is_alerted is False:
                     #if owalert.is_alerted is False:
-                        duration = owalert.request_dt + timedelta(hours=owalert.precip_check(hourly_weather))
-                        owalert.update_expiry(datetime.timestamp(duration))
+                        ending = owalert.precip_check(hourly_weather)
+                        owalert.update_expiry(ending)
                         owalert.send_push_notify(f"{str.title(owalert.owc.check_condition(cur_code))} in "
                                                  f"{owalert.town}",
-                                                 f"Ending: {datetime.strftime(owalert.expires_dt, '%H:%M')}")
+                                                 f"Ending~ {datetime.strftime(owalert.expires_dt, '%H:%M')}")
         sleep(SLEEP)
         owalert.owc.update_weather()
         if owalert.expires_dt < owalert.request_dt:
             owalert.is_alerted = False
+
+
+def round_time(dt, delta: timedelta):
+    return dt + (datetime.min - dt) % delta
 
 
 if __name__ == "__main__":
