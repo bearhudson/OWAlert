@@ -8,6 +8,7 @@ import os
 
 API_KEY = os.getenv("API_KEY")
 SLEEP = 3600
+ZIPCODE = "02188"
 
 
 class OWAlertClass:
@@ -27,18 +28,18 @@ class OWAlertClass:
     def update_expiry(self, expires: int):
         self.expires_dt = datetime.fromtimestamp(expires)
 
-    def send_push_notify(self, message):
+    def send_push_notify(self, title, message):
         print(self.request_time)
         print(self.request_dt)
         print(self.expires_dt)
         print(self.is_alerted)
         print(message)
-        self.pushbullet_obj.send_note("OWAlert", message)
+        self.pushbullet_obj.send_note(title, message)
         self.is_alerted = True
 
 
 def main():
-    owalert = OWAlertClass(api_key=API_KEY, zipcode='02188', units='metric')
+    owalert = OWAlertClass(api_key=API_KEY, zipcode=ZIPCODE, units='metric')
     while True:
         hourly_weather = owalert.owc.weather_data['hourly']
         if 'alerts' in owalert.owc.weather_data and owalert.is_alerted is False:
@@ -63,8 +64,9 @@ def main():
                                       f"Condition: {owalert.owc.check_condition(cur_code)}\n " \
                                       f"Alert at: {datetime.strftime(owalert.request_dt, '%H:%M')}\n " \
                                       f"Expires at: {datetime.strftime(owalert.expires_dt, '%H:%M')}"
-                        owalert.send_push_notify(f"{str.title(owalert.owc.check_condition(cur_code))} for "
-                                                 f"{owalert.owc.zipcode}\n")
+                        owalert.send_push_notify(f"{str.title(owalert.owc.check_condition(cur_code))}",
+                                                 f"For: {ZIPCODE} Expires: "
+                                                 f"{datetime.strftime(owalert.expires_dt, '%H:%M')}")
         sleep(SLEEP)
         owalert.owc.update_weather()
         if owalert.expires_dt < owalert.request_dt:
