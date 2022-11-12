@@ -9,7 +9,7 @@ import os
 
 API_KEY = os.getenv("API_KEY")
 SLEEP = 3600
-ZIPCODE = "02188"
+ZIPCODE = "45202"
 COUNTRY_CODE = "us"
 
 
@@ -37,7 +37,8 @@ class OWAlertClass:
                                 f"format=json&addressdetails=1&country={COUNTRY_CODE}")
         location.raise_for_status()
         location_json = location.json()
-        return f"{location_json[1]['address']['town']}"
+        location_str = location_json[0]['display_name'].split(',')
+        return location_str[0]
 
     def precip_check(self, weather_slice: list) -> int:
         until = weather_slice[0]['dt']
