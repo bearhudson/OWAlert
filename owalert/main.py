@@ -3,39 +3,50 @@ import pushbullet
 from time import sleep
 from _datetime import datetime
 from datetime import timedelta
+import requests
 import os
 
 
 API_KEY = os.getenv("API_KEY")
 SLEEP = 3600
 ZIPCODE = "02188"
+COUNTRY_CODE = "us"
 
 
 class OWAlertClass:
     def __init__(self, **kwargs):
         self.owc = OpenWeatherClass(**kwargs)
-        self.is_alerted: bool = False
+        self.town = self.get_location_name()
         self.request_time = self.owc.weather_data['current']['dt']
         self.request_dt = datetime.fromtimestamp(self.request_time)
         self.expires_dt = self.request_dt + timedelta(hours=1)
-        self.email = os.environ.get('MY_EMAIL')
-        self.password = os.environ.get('MY_PASSWORD')
-        self.my_server = os.environ.get('MY_SERVER')
-        self.my_from = os.environ.get('MY_FROM')
         self.pushbullet_obj = pushbullet.API()
         self.pushbullet_obj.set_token(os.environ.get('PUSHBULLET_API'))
+        self.is_alerted: bool = False
+        self.string_hash = None
 
-    def update_expiry(self, expires: int):
+    def update_expiry(self, expires: float):
         self.expires_dt = datetime.fromtimestamp(expires)
 
-    def send_push_notify(self, title, message):
-        print(self.request_time)
-        print(self.request_dt)
-        print(self.expires_dt)
-        print(self.is_alerted)
-        print(message)
+    def send_push_notify(self, title: str, message: str):
         self.pushbullet_obj.send_note(title, message)
         self.is_alerted = True
+
+    def get_location_name(self) -> str:
+        location = requests.get(f"https://nominatim.openstreetmap.org/search?postalcode={ZIPCODE}&"
+                                f"format=json&addressdetails=1&country={COUNTRY_CODE}")
+        location.raise_for_status()
+        location_json = location.json()
+        return f"{location_json[1]['address']['town']}"
+
+    def precip_check(self, weather_slice: list) -> int:
+        counter = 0
+        for hour in weather_slice:
+            if hour['weather'][0]['id'] <= 800:
+                counter += 1
+            else:
+                break
+        return counter
 
 
 def main():
@@ -48,25 +59,19 @@ def main():
             sender_txt = owalert.owc.weather_data['alerts'][0]['sender_name']
             start_dt = datetime.fromtimestamp(owalert.owc.weather_data['alerts'][0]['start'])
             owalert.update_expiry(owalert.owc.weather_data['alerts'][0]['end'])
-            alert_text = f"Subject: Alert! {description_title}\n" \
-                         f"Description: From {sender_txt} at {datetime.strftime(owalert.request_dt, '%H:%M')}\n" \
-                         f"Start time: {datetime.strftime(start_dt, '%H:%M')} -- " \
-                         f"End time: {datetime.strftime(owalert.expires_dt, '%H:%M')}\n" \
-                         f"{description_txt}\n"
-            owalert.send_push_notify(f"{description_title} for {owalert.owc.zipcode} "
+            owalert.send_push_notify(f"{description_title}", f"in {owalert.town} "
                                      f"Expires: {datetime.strftime(owalert.expires_dt, '%H:%M')}")
         else:
             for hour in hourly_weather[1:2]:
                 for status in hour['weather']:
                     cur_code = int(status['id'])
                     if cur_code < 800 and owalert.is_alerted is False:
-                        precip_text = f"Subject: Precip. for {owalert.owc.zipcode}\n" \
-                                      f"Condition: {owalert.owc.check_condition(cur_code)}\n " \
-                                      f"Alert at: {datetime.strftime(owalert.request_dt, '%H:%M')}\n " \
-                                      f"Expires at: {datetime.strftime(owalert.expires_dt, '%H:%M')}"
-                        owalert.send_push_notify(f"{str.title(owalert.owc.check_condition(cur_code))}",
-                                                 f"For: {ZIPCODE} Expires: "
-                                                 f"{datetime.strftime(owalert.expires_dt, '%H:%M')}")
+                    #if owalert.is_alerted is False:
+                        duration = owalert.request_dt + timedelta(hours=owalert.precip_check(hourly_weather))
+                        owalert.update_expiry(datetime.timestamp(duration))
+                        owalert.send_push_notify(f"{str.title(owalert.owc.check_condition(cur_code))} in "
+                                                 f"{owalert.town}",
+                                                 f"Ending: {datetime.strftime(owalert.expires_dt, '%H:%M')}")
         sleep(SLEEP)
         owalert.owc.update_weather()
         if owalert.expires_dt < owalert.request_dt:
