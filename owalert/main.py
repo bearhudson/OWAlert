@@ -8,7 +8,7 @@ import os
 
 
 API_KEY = os.getenv("API_KEY")
-SLEEP = 3600
+SLEEP = 1800
 ZIPCODE = "02188"
 COUNTRY_CODE = "us"
 
@@ -36,15 +36,18 @@ def main():
     owalert = OWAlertClass(api_key=API_KEY, zipcode=ZIPCODE, units='imperial')
     while True:
         hourly_weather = owalert.owc.weather_data['hourly']
+        print(f"Report for: {datetime.strftime(datetime.fromtimestamp(hourly_weather[0]['dt']), '%H%M')}")
         if 'alerts' in owalert.owc.weather_data and owalert.is_alerted is False:
             description_title = owalert.owc.weather_data['alerts'][0]['event']
             owalert.update_expiry(owalert.owc.weather_data['alerts'][0]['end'])
             owalert.send_push_notify(f"{description_title}", f"in {owalert.town} "
-                                     f"Expires: {datetime.strftime(owalert.expires_dt, '%HH')}")
+                                     f"Expires: {datetime.strftime(owalert.expires_dt, '%H')}")
         else:
+            print("No Alerts. Checking Rain...")
             for hour in hourly_weather[1:2]:
                 for status in hour['weather']:
                     cur_code = int(status['id'])
+                    print(cur_code, owalert.is_alerted)
                     if cur_code < 800 and owalert.is_alerted is False:
                         rain_rate = None
                         snow_rate = None
@@ -67,9 +70,11 @@ def main():
                                                      f"E:{datetime.strftime(owalert.expires_dt, '%HH')} "
                                                      f"P:{precip_prob} "
                                                      f"R:{snow_rate}")
+        print("Sleeping...")
         sleep(SLEEP)
         owalert.owc.update_weather()
         if owalert.expires_dt < owalert.request_dt:
+            print("Alert Expired...")
             owalert.is_alerted = False
 
 
