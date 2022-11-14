@@ -31,12 +31,20 @@ class OWAlertClass:
         self.pushbullet_obj.send_note(title, message)
         self.is_alerted = True
 
+    def update_data(self):
+        self.owc.get_weather()
+        self.request_time = self.owc.weather_data['current']['dt']
+        self.request_dt = datetime.fromtimestamp(self.request_time)
+
 
 def main():
     owalert = OWAlertClass(api_key=API_KEY, zipcode=ZIPCODE, units='imperial')
     while True:
         hourly_weather = owalert.owc.weather_data['hourly']
         print(f"Report for: {datetime.strftime(datetime.fromtimestamp(hourly_weather[0]['dt']), '%H%M')}")
+        if owalert.expires_dt < owalert.request_dt:
+            print("Alert Expired...")
+            owalert.is_alerted = False
         if 'alerts' in owalert.owc.weather_data and owalert.is_alerted is False:
             description_title = owalert.owc.weather_data['alerts'][0]['event']
             owalert.update_expiry(owalert.owc.weather_data['alerts'][0]['end'])
@@ -55,13 +63,13 @@ def main():
                             rain_rate = hour['rain']['1h']
                         if 'snow' in hour:
                             snow_rate = hour['snow']['1h']
-                        ending = precip_check(hourly_weather)
-                        owalert.update_expiry(ending)
+                        duration = precip_check(hourly_weather)
+                        owalert.update_expiry(duration)
                         precip_prob = hour['pop'] = 0
                         if rain_rate:
                             owalert.send_push_notify(f"{str.title(owalert.owc.check_condition(cur_code))} in "
                                                      f"{owalert.town}",
-                                                     f"E:{datetime.strftime(owalert.expires_dt, '%HH')} "
+                                                     f"D:{datetime.strftime(owalert.expires_dt, '%HH')} "
                                                      f"P:{precip_prob} "
                                                      f"R:{rain_rate}")
                         if snow_rate:
@@ -72,10 +80,7 @@ def main():
                                                      f"R:{snow_rate}")
         print("Sleeping...")
         sleep(SLEEP)
-        owalert.owc.update_weather()
-        if owalert.expires_dt < owalert.request_dt:
-            print("Alert Expired...")
-            owalert.is_alerted = False
+        owalert.update_data()
 
 
 def get_location_name() -> str:
@@ -88,13 +93,13 @@ def get_location_name() -> str:
 
 
 def precip_check(weather_slice: list) -> int:
-    until = weather_slice[0]['dt']
+    duration = weather_slice[0]['dt']
     for hour in weather_slice:
         if hour['weather'][0]['id'] <= 800:
-            until = hour['dt']
+            duration = hour['dt']
         else:
             break
-    return until
+    return duration
 
 
 if __name__ == "__main__":
