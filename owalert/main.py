@@ -7,10 +7,12 @@ import requests
 import os
 
 
-API_KEY = os.getenv("API_KEY")
+OW_API_KEY = os.getenv("OW_API_KEY")
+PUSH_API = os.getenv("PUSHBULLET_API")
+ZIPCODE = os.getenv("ZIPCODE")
+COUNTRY_CODE = os.getenv("COUNTRY_CODE")
+UNITS = os.getenv("UNITS")
 SLEEP = 1800
-ZIPCODE = "02188"
-COUNTRY_CODE = "us"
 
 
 class OWAlertClass:
@@ -21,7 +23,7 @@ class OWAlertClass:
         self.request_dt = datetime.fromtimestamp(self.request_time)
         self.expires_dt = self.request_dt + timedelta(hours=1)
         self.pushbullet_obj = pushbullet.API()
-        self.pushbullet_obj.set_token(os.environ.get('PUSHBULLET_API'))
+        self.pushbullet_obj.set_token(os.environ.get('PUSH_API'))
         self.is_alerted: bool = False
 
     def update_expiry(self, expires: float):
@@ -38,7 +40,7 @@ class OWAlertClass:
 
 
 def main():
-    owalert = OWAlertClass(api_key=API_KEY, zipcode=ZIPCODE, units='imperial')
+    owalert = OWAlertClass(api_key=OW_API_KEY, zipcode=ZIPCODE, units='imperial')
     while True:
         hourly_weather = owalert.owc.weather_data['hourly']
         print(f"Report for: {datetime.strftime(datetime.fromtimestamp(hourly_weather[0]['dt']), '%H%M')}")
