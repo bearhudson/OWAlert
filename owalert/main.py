@@ -1,13 +1,16 @@
-from openweatherclass import OpenWeatherClass
-import pushbullet
 from time import sleep
 from _datetime import datetime
 from datetime import timedelta
 import requests
 import os
 
+from pushsafer import Client
+from openweatherclass import OpenWeatherClass
+
 OW_API_KEY = os.getenv("OW_API_KEY")
 PUSH_API = os.getenv("PUSHBULLET_API")
+PUSHSAFER_API = os.getenv("PUSHSAFER_API")
+PUSHSAFER_DEVICE = os.getenv("PUSHSAFER_DEVICE")
 ZIPCODE = os.getenv("ZIPCODE")
 COUNTRY_CODE = os.getenv("COUNTRY_CODE")
 UNITS = os.getenv("UNITS")
@@ -21,15 +24,31 @@ class OWAlertClass:
         self.request_time = self.owc.weather_data['current']['dt']
         self.request_dt = datetime.fromtimestamp(self.request_time)
         self.expires_dt = self.request_dt + timedelta(hours=1)
-        self.pushbullet_obj = pushbullet.API()
-        self.pushbullet_obj.set_token(os.environ.get('PUSH_API'))
+        self.pushsafer_client = Client(PUSHSAFER_API)
+        self.pushsafer_device = PUSHSAFER_DEVICE
         self.is_alerted: bool = False
+        self.is_notified: bool = False
 
     def update_expiry(self, expires: float):
         self.expires_dt = datetime.fromtimestamp(expires)
 
-    def send_push_notify(self, title: str, message: str):
-        self.pushbullet_obj.send_note(title, message)
+    def send_push_notify(self, title: str, message: str, msg_sound: int, icon_type: int, vibration: int = 2,
+                         url: str = "", urltitle: str = "", ttl: int = 43200, priority: int = 2, retry: int = 0,
+                         expire: int = 0, answer: int = 0):
+        self.pushsafer_client.send_message(f"{title}",
+                                           f"{message}",
+                                           f"{self.pushsafer_device}",
+                                           f"{icon_type}",
+                                           f"{msg_sound}",
+                                           f"{vibration}",
+                                           f"{url}",
+                                           f"{urltitle}",
+                                           f"{ttl}",
+                                           f"{priority}",
+                                           f"{retry}",
+                                           f"{expire}",
+                                           f"{answer}",
+                                           "", "", "")
         self.is_alerted = True
 
     def update_data(self):
@@ -50,9 +69,10 @@ def main():
             description_title = owalert.owc.weather_data['alerts'][0]['event']
             owalert.update_expiry(owalert.owc.weather_data['alerts'][0]['end'])
             print(f"{description_title}", f"in {owalert.town} "
-                                          f"Expires: {datetime.strftime(owalert.expires_dt, '%D:%H')}")
+                                          f"Expires: {datetime.strftime(owalert.expires_dt, '%m/%d:%H')}")
             owalert.send_push_notify(f"{description_title}", f"in {owalert.town} "
-                                                             f"Expires: {datetime.strftime(owalert.expires_dt, '%H')}")
+                                                             f"Expires: {datetime.strftime(owalert.expires_dt, '%H')}",
+                                     24, 64)
         else:
             print("No Alerts. Checking Rain...")
             for hour in hourly_weather[1:2]:
@@ -72,18 +92,12 @@ def main():
                         precip_prob = hour['pop'] = 0
                         if rain_rate:
                             print("Sending Alert...")
-                            owalert.send_push_notify(f"{str.title(owalert.owc.check_condition(cur_code))} in "
-                                                     f"{owalert.town}",
-                                                     f"D:{datetime.strftime(owalert.expires_dt, '%HH')} "
-                                                     f"P:{precip_prob} "
-                                                     f"R:{rain_rate}")
+                            owalert.send_push_notify()
+                            # TODO: fix notification
                         if snow_rate:
                             print("Sending Alert...")
-                            owalert.send_push_notify(f"{str.title(owalert.owc.check_condition(cur_code))} in "
-                                                     f"{owalert.town}",
-                                                     f"E:{datetime.strftime(owalert.expires_dt, '%HH')} "
-                                                     f"P:{precip_prob} "
-                                                     f"R:{snow_rate}")
+                            owalert.send_push_notify()
+                            # TODO: fix notification
         print("Sleeping...")
         sleep(SLEEP)
         owalert.update_data()

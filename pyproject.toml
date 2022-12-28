@@ -11,6 +11,7 @@ openweatherclass = "^0.4.1"
 requests = "^2.28.1"
 pydantic = "^1.10.2"
 hatch = "^1.6.3"
+python-pushsafer = "^1.0"
 
 [tool.poetry.dev-dependencies]
 
