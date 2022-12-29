@@ -34,9 +34,9 @@ class OWAlertClass:
 
     def send_push_notify(self, title: str, message: str, msg_sound: int, icon_type: int, vibration: int = 2,
                          url: str = "", urltitle: str = "", ttl: int = 43200, priority: int = 2, retry: int = 0,
-                         expire: int = 0, answer: int = 0) -> object:
-        self.pushsafer_client.send_message(f"{title}",
-                                           f"{message}",
+                         expire: int = 0, answer: int = 0):
+        self.pushsafer_client.send_message(f"{message}",
+                                           f"{title}",
                                            f"{self.pushsafer_device}",
                                            f"{icon_type}",
                                            f"{msg_sound}",
@@ -49,7 +49,7 @@ class OWAlertClass:
                                            f"{expire}",
                                            f"{answer}",
                                            "", "", "")
-        self.is_alerted = True
+
 
     def update_data(self):
         self.owc.get_weather()
@@ -109,7 +109,6 @@ def main():
                                                      22,  # Morse Sound
                                                      get_condition_icon(cur_code))
         print("Sleeping...")
-        owalert.send_push_notify("Testing!!", "Testing functions....", 22, get_condition_icon(800))
         sleep(SLEEP)
         owalert.update_data()
 
