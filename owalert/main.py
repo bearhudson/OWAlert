@@ -109,6 +109,7 @@ def main():
                                                      22,  # Morse Sound
                                                      get_condition_icon(cur_code))
         print("Sleeping...")
+        owalert.send_push_notify("Testing!!", "Testing functions....", 22, get_condition_icon(800))
         sleep(SLEEP)
         owalert.update_data()
 
@@ -142,7 +143,6 @@ def get_condition_icon(code):
     fog_icon = 66
     extreme_code = range(751, 781)
     extreme_icon = 69
-    clear_code = 800
     clear_icon = 64
     cloud_code = range(801, 804)
     cloud_icon = 65
@@ -156,10 +156,10 @@ def get_condition_icon(code):
         return fog_icon
     if code in extreme_code:
         return extreme_icon
-    if code in clear_code:
-        return clear_icon
     if code in cloud_code:
         return cloud_icon
+    if code == 800:
+        return clear_icon
 
 
 if __name__ == "__main__":
