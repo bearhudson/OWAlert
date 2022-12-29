@@ -130,7 +130,7 @@ def precip_check(weather_slice: list) -> int:
             break
     return duration
 
-def get_condition_icon(code):
+def get_condition_icon(code) -> int:
     thunder_code = range(200, 230)
     thunder_icon = 68
     rain_code = range(300, 531)
