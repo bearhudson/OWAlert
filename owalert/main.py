@@ -34,7 +34,7 @@ class OWAlertClass:
 
     def send_push_notify(self, title: str, message: str, msg_sound: int, icon_type: int, vibration: int = 2,
                          url: str = "", urltitle: str = "", ttl: int = 43200, priority: int = 2, retry: int = 0,
-                         expire: int = 0, answer: int = 0):
+                         expire: int = 0, answer: int = 0) -> object:
         self.pushsafer_client.send_message(f"{title}",
                                            f"{message}",
                                            f"{self.pushsafer_device}",
@@ -74,13 +74,13 @@ def main():
                                                              f"Expires: {datetime.strftime(owalert.expires_dt, '%H')}",
                                      24, 64)
         else:
-            print("No Alerts. Checking Rain...")
+            print("No Alerts. Checking Precip...")
             for hour in hourly_weather[1:2]:
                 for status in hour['weather']:
                     cur_code = int(status['id'])
-                    print(cur_code, owalert.is_alerted)
-                    if cur_code < 800 and owalert.is_alerted is False:
-                        print("Prepping alert...")
+                    print(cur_code, owalert.is_notified)
+                    if cur_code < 800 and owalert.is_notified is False:
+                        print("Prepping notification...")
                         rain_rate = None
                         snow_rate = None
                         if 'rain' in hour:
@@ -91,13 +91,23 @@ def main():
                         owalert.update_expiry(duration)
                         precip_prob = hour['pop'] = 0
                         if rain_rate:
-                            print("Sending Alert...")
-                            owalert.send_push_notify()
-                            # TODO: fix notification
+                            print("Sending notification...")
+                            owalert.send_push_notify("Rain Alert", 
+                                                     f"{str.title(owalert.owc.check_condition(cur_code))} "
+                                                     f"in {owalert.town} "
+                                                     f"D:{datetime.strftime(owalert.expires_dt, '%HH')} "
+                                                     f"P:{precip_prob} R:{rain_rate}",
+                                                     22, # Morse Sound
+                                                     get_condition_icon(cur_code))
                         if snow_rate:
-                            print("Sending Alert...")
-                            owalert.send_push_notify()
-                            # TODO: fix notification
+                            print("Sending notification...")
+                            owalert.send_push_notify("Snow Alert",
+                                                     f"{str.title(owalert.owc.check_condition(cur_code))} "
+                                                     f"in {owalert.town} "
+                                                     f"D:{datetime.strftime(owalert.expires_dt, '%HH')} "
+                                                     f"P:{precip_prob} R:{snow_rate}",
+                                                     22,  # Morse Sound
+                                                     get_condition_icon(cur_code))
         print("Sleeping...")
         sleep(SLEEP)
         owalert.update_data()
@@ -120,6 +130,36 @@ def precip_check(weather_slice: list) -> int:
         else:
             break
     return duration
+
+def get_condition_icon(code):
+    thunder_code = range(200, 230)
+    thunder_icon = 68
+    rain_code = range(300, 531)
+    rain_icon = 67
+    snow_code = range(600, 622)
+    snow_icon = 76
+    fog_code = range(701, 741)
+    fog_icon = 66
+    extreme_code = range(751, 781)
+    extreme_icon = 69
+    clear_code = 800
+    clear_icon = 64
+    cloud_code = range(801, 804)
+    cloud_icon = 65
+    if code in thunder_code:
+        return thunder_icon
+    if code in rain_code:
+        return rain_icon
+    if code in snow_code:
+        return snow_icon
+    if code in fog_code:
+        return fog_icon
+    if code in extreme_code:
+        return extreme_icon
+    if code in clear_code:
+        return clear_icon
+    if code in cloud_code:
+        return cloud_icon
 
 
 if __name__ == "__main__":
