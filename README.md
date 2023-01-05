@@ -23,7 +23,8 @@
     $ poetry install
     $ .venv/bin/python3 owawlert/main.py
     ```
-* I have also created a Dockerfile and docker.sh to build and launch a local instance which reads the environment variables from a .env file you will need to create. The format for is VARIABLE=VALUE
+* I have also created a Dockerfile and docker.sh^ to build and launch a local instance which reads the environment variables from a .env file you will need to create. The format for is VARIABLE=VALUE
     ```bash
     $ ./docker.sh
     ```
+    ^ Script requires rootless docker.
