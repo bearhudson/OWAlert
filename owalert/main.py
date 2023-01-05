@@ -70,6 +70,7 @@ class OWAlertClass:
 
 def main():
     owalert = OWAlertClass(api_key=OW_API_KEY, zipcode=ZIPCODE, units='imperial')
+    owalert.send_push_notify("Starting!", "Starting Daemon.", 24, 148)
     while True:
         hourly_weather = owalert.owc.weather_data['hourly']
         print(f"Report for: {datetime.strftime(datetime.fromtimestamp(hourly_weather[0]['dt']), '%H%M')}")
