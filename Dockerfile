@@ -11,4 +11,4 @@ RUN poetry install --no-interaction --no-ansi -v
 FROM python as runtime
 ENV PATH="/app/.venv/bin:$PATH"
 COPY --from=poetry /app /app
-CMD ["python3", "/app/app/owalert/main.py"]
+CMD ["python3", "-u", "/app/app/owalert/main.py"]

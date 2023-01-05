@@ -7,4 +7,4 @@ then
 fi
 
 docker build -t owalert .
-docker run --env-file=.env owalert
+docker run -i --env-file=.env owalert
