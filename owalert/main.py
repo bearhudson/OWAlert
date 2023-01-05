@@ -8,7 +8,6 @@ from pushsafer import Client
 from openweatherclass import OpenWeatherClass
 
 OW_API_KEY = os.getenv("OW_API_KEY")
-PUSH_API = os.getenv("PUSHBULLET_API")
 PUSHSAFER_API = os.getenv("PUSHSAFER_API")
 PUSHSAFER_DEVICE = os.getenv("PUSHSAFER_DEVICE")
 ZIPCODE = os.getenv("ZIPCODE")
