@@ -4,12 +4,14 @@
 
 ###### Requirements
 * OpenWeather [API key](https://openweathermap.org/appid)
-* Pushbullet [API key](https://www.pushbullet.com/#settings/account)
+* Pushsafer [API key](https://www.pushsafer.com/en/pushapi)
+* Pushsafer Device ID [Device/Group IDs](https://www.pushsafer.com/en/pushapi_ext#API-D)
 
 ###### Environment Variables
 
 * OW_API_KEY - OpenWeather API Key
-* PUSH_API = Pushbullet API Key
+* PUSHSAFER_API = Pushsafer API Key
+* PUSHSAFER_DEVICE = Pushsafer Device/Group
 * ZIPCODE = Your Zipcode
-* COUNTRY_CODE = Two letter country code. Eg. _us_
-* UNITS = _imperial_ vs. _metric_
+* COUNTRY_CODE = Two-letter country code. e.g. _**us**_
+* UNITS = _**imperial**_ vs. _**metric**_
