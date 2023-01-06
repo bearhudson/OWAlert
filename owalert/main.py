@@ -105,7 +105,7 @@ def main():
             cur_code = owalert.owc.weather_data['current']['weather'][0]['id']
             if cur_code < 800 and not owalert.is_notified:
                 for status in owalert.owc.weather_data['current']:
-                    if cur_code < 800:
+                    if cur_code < 800 and owalert.is_notified == False:
                         print("Prepping notification...")
                         print(cur_code, owalert.is_notified)
                         owalert.update_expiry(notify_type='notify', expires=precip_check(hourly_weather))
