@@ -103,39 +103,36 @@ def main():
             print("Checking Precip...")
             cur_code = owalert.owc.weather_data['current']['weather'][0]['id']
             if cur_code < 800 and not owalert.is_notified:
-                for status in owalert.owc.weather_data['current']:
-                    if cur_code < 800 and owalert.is_notified == False:
+                for condition in owalert.owc.weather_data['current']['weather']:
+                    if condition['main'] == 'Rain':
                         print("Prepping notification...")
                         print(cur_code, owalert.is_notified)
                         owalert.update_expiry(notify_type='notify', expires=precip_check(hourly_weather))
                         notify_expire = owalert.notify_expires_dt + timedelta(hours=owalert.tz_offset)
-                        if status == 'rain':
-                            rain_rate = status['rain']['1h']
-                        else:
-                            rain_rate = 0
+                        rain_rate = owalert.owc.weather_data['current']['rain']['1h']
                         print("Sending rain notification...")
                         owalert.send_push_notify("Rain Alert",
                                                  f"{str.title(owalert.owc.check_condition(cur_code))} "
                                                  f"in {owalert.town} \n"
-                                                 f"Date: {datetime.strftime(notify_expire, '%a %b/%d %H:%M')}\n"
+                                                 f"Expires: {datetime.strftime(notify_expire, '%a %b/%d %H:%M')}\n"
                                                  # f"Precipitation: {precip_prob}\n"
-                                                 f"Rate: {rain_rate}\n",
+                                                 f"Rate: {rain_rate}/hr\n",
                                                  22,  # Morse Sound
                                                  get_condition_icon(cur_code))
                         owalert.is_notified = True
-                    if status == 'snow' and cur_code < 800:
+                    if condition['main'] == 'Snow':
                         print("Prepping notification...")
                         print(cur_code, owalert.is_notified)
                         owalert.update_expiry(notify_type='notify', expires=precip_check(hourly_weather))
                         notify_expire = owalert.notify_expires_dt + timedelta(hours=owalert.tz_offset)
-                        snow_rate = status['snow']['1h']
+                        snow_rate = owalert.owc.weather_data['current']['snow']['1h']
                         print("Sending snow notification...")
                         owalert.send_push_notify("Snow Alert",
                                                  f"{str.title(owalert.owc.check_condition(cur_code))} "
                                                  f"in {owalert.town} \n"
-                                                 f"Date: {datetime.strftime(notify_expire, '%a %b/%d %H:%M')}\n"
+                                                 f"Expires: {datetime.strftime(notify_expire, '%a %b/%d %H:%M')}\n"
                                                  # f"Precipitation: {precip_prob}\n"
-                                                 f"Rate: {snow_rate}\n",
+                                                 f"Rate: {snow_rate}/hr\n",
                                                  22,  # Morse Sound
                                                  get_condition_icon(cur_code))
                         owalert.is_notified = True
