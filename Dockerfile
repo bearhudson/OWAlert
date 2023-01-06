@@ -9,6 +9,7 @@ COPY . ./app
 COPY pyproject.toml ./pyproject.toml
 RUN poetry install --no-interaction --no-ansi -v
 FROM python as runtime
+WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH"
-COPY --from=poetry /app /app
+COPY --from=poetry /app /
 CMD ["python3", "-u", "/app/app/owalert/main.py"]
