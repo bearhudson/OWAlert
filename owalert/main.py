@@ -64,7 +64,6 @@ class OWAlertClass:
                                            f"{expire}",
                                            f"{answer}",
                                            "", "", "")
-
     def update_data(self):
         self.owc.get_weather()
         self.request_time = self.owc.weather_data['current']['dt']
