@@ -44,6 +44,7 @@ def precip_check(weather_slice: list) -> int:
         if hour['weather'][0]['id'] <= 800:
             duration = hour['dt']
         else:
+
             break
     return duration
 
@@ -154,7 +155,7 @@ def main():
     # owalert.send_push_notify("Starting!", "Starting Daemon.", 24, 148)
     while True:
         hourly_weather = owalert.owc.weather_data['hourly']
-        report_time = datetime.fromtimestamp(hourly_weather[0]['dt']) + timedelta(hours=owalert.tz_offset)
+        report_time = datetime.fromtimestamp(owalert.owc.weather_data['current']['dt']) + timedelta(hours=owalert.tz_offset)
         print(f"Report for: {datetime.strftime(report_time, '%a %b/%d %H:%M')}")
         temp = owalert.owc.weather_data['current']['temp']
         feels_like = owalert.owc.weather_data['current']['feels_like']
@@ -171,8 +172,8 @@ def main():
             alert_sender_name = owalert.owc.weather_data['alerts'][0]['sender_name']
             description = re.sub("\n", " ", owalert.owc.weather_data['alerts'][0]['description'])
             alert_count = len(owalert.owc.weather_data['alerts'])
-            owalert.update_expiry(notify_type='alert', expires=owalert.owc.weather_data['alerts'][0]['end'])
             alert_expire = owalert.alert_expires_dt + timedelta(hours=owalert.tz_offset)
+            owalert.update_expiry(notify_type='alert', expires=alert_expire.timestamp())
             print(f"{description_title} from {alert_sender_name} in {owalert.town} "
                   f"Expires: {datetime.strftime(owalert.alert_expires_dt, '%a %b/%d %H:%M')}")
             owalert.send_push_notify(f"{description_title} from {alert_sender_name}",
