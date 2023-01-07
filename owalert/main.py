@@ -142,6 +142,7 @@ class OWAlertClass:
                                            f"{expire}",
                                            f"{answer}",
                                            "", "", "")
+
     def update_data(self):
         self.owc.get_weather()
         self.request_time = self.owc.weather_data['current']['dt']
@@ -168,7 +169,7 @@ def main():
         if 'alerts' in owalert.owc.weather_data and owalert.is_alerted is False:
             description_title = owalert.owc.weather_data['alerts'][0]['event']
             alert_sender_name = owalert.owc.weather_data['alerts'][0]['sender_name']
-            description = re.sub("\n", "", owalert.owc.weather_data['alerts'][0]['description'])
+            description = re.sub("\n", " ", owalert.owc.weather_data['alerts'][0]['description'])
             alert_count = len(owalert.owc.weather_data['alerts'])
             owalert.update_expiry(notify_type='alert', expires=owalert.owc.weather_data['alerts'][0]['end'])
             alert_expire = owalert.alert_expires_dt + timedelta(hours=owalert.tz_offset)
