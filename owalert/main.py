@@ -145,8 +145,7 @@ class OWAlertClass:
 
     def update_data(self):
         self.owc.get_weather()
-        self.request_time = self.owc.weather_data['current']['dt']
-        self.request_dt = datetime.fromtimestamp(self.request_time)
+        self.request_dt_utc = datetime.fromtimestamp(self.owc.weather_data['current']['dt'])
 
 
 def main():
@@ -194,8 +193,8 @@ def main():
                     if condition['main'] == 'Rain':
                         print("Prepping notification...")
                         print(cur_code, owalert.is_notified)
-                        owalert.update_expiry(notify_type='notify', expires=precip_check(hourly_weather))
-                        notify_expire = owalert.notify_expires_dt + timedelta(hours=owalert.tz_offset)
+                        notify_expire = owalert.request_dt_utc + timedelta(hours=precip_check(hourly_weather))
+                        owalert.update_expiry(notify_type='notify', expires=datetime.timestamp(notify_expire))
                         rain_rate = owalert.owc.weather_data['current']['rain']['1h']
                         print("Sending rain notification...")
                         owalert.send_push_notify("Rain Alert",
@@ -214,8 +213,8 @@ def main():
                     if condition['main'] == 'Snow':
                         print("Prepping notification...")
                         print(cur_code, owalert.is_notified)
-                        owalert.update_expiry(notify_type='notify', expires=precip_check(hourly_weather))
-                        notify_expire = owalert.notify_expires_dt + timedelta(hours=owalert.tz_offset)
+                        notify_expire = owalert.request_dt_utc + timedelta(hours=precip_check(hourly_weather))
+                        owalert.update_expiry(notify_type='notify', expires=datetime.timestamp(notify_expire))
                         snow_rate = owalert.owc.weather_data['current']['snow']['1h']
                         print("Sending snow notification...")
                         owalert.send_push_notify("Snow Alert",
