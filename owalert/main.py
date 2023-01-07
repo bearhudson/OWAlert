@@ -18,7 +18,7 @@ UNITS = os.getenv("UNITS")
 SLEEP = 1800
 
 
-def get_temp_title() -> str:
+def get_temp_string() -> str:
     if UNITS == 'metric':
         return "°C"
     if UNITS == 'imperial':
@@ -100,10 +100,9 @@ class OWAlertClass:
     def __init__(self, **kwargs):
         self.owc = OpenWeatherClass(**kwargs)
         self.town = get_location_name()
-        self.request_time = self.owc.weather_data['current']['dt']
-        self.request_dt = datetime.fromtimestamp(self.request_time)
-        self.alert_expires_dt = self.request_dt + timedelta(hours=1)
-        self.notify_expires_dt = self.request_dt + timedelta(hours=1)
+        self.request_dt_utc = datetime.fromtimestamp(self.owc.weather_data['current']['dt'])
+        self.alert_expires_dt = self.request_dt_utc + timedelta(hours=1)
+        self.notify_expires_dt = self.request_dt_utc + timedelta(hours=1)
         self.pushsafer_client = Client(PUSHSAFER_API)
         self.pushsafer_device = PUSHSAFER_DEVICE
         self.is_alerted: bool = False
@@ -155,33 +154,32 @@ def main():
     # owalert.send_push_notify("Starting!", "Starting Daemon.", 24, 148)
     while True:
         hourly_weather = owalert.owc.weather_data['hourly']
-        report_time = datetime.fromtimestamp(owalert.owc.weather_data['current']['dt']) + timedelta(hours=owalert.tz_offset)
-        print(f"Report for: {datetime.strftime(report_time, '%a %b/%d %H:%M')}")
+        print(f"Report for: {datetime.strftime(owalert.request_dt_utc , '%a %b/%d %H:%M')}")
         temp = owalert.owc.weather_data['current']['temp']
         feels_like = owalert.owc.weather_data['current']['feels_like']
         wind_speed = owalert.owc.weather_data['current']['wind_speed']
         wind_direction = get_cardinal_direction(owalert.owc.weather_data['current']['wind_deg'])
-        if owalert.alert_expires_dt < owalert.request_dt:
+        if owalert.alert_expires_dt < owalert.request_dt_utc:
             print("Alert Expired...")
             owalert.is_alerted = False
-        if owalert.notify_expires_dt < owalert.request_dt:
+        if owalert.notify_expires_dt < owalert.request_dt_utc:
             print("Notification Expired...")
             owalert.is_alerted = False
         if 'alerts' in owalert.owc.weather_data and owalert.is_alerted is False:
             description_title = owalert.owc.weather_data['alerts'][0]['event']
             alert_sender_name = owalert.owc.weather_data['alerts'][0]['sender_name']
+            alert_expire = owalert.owc.weather_data['alerts'][0]['end']
+            owalert.update_expiry(notify_type='alert', expires=alert_expire)
             description = re.sub("\n", " ", owalert.owc.weather_data['alerts'][0]['description'])
             alert_count = len(owalert.owc.weather_data['alerts'])
-            alert_expire = owalert.alert_expires_dt + timedelta(hours=owalert.tz_offset)
-            owalert.update_expiry(notify_type='alert', expires=alert_expire.timestamp())
             print(f"{description_title} from {alert_sender_name} in {owalert.town} "
                   f"Expires: {datetime.strftime(owalert.alert_expires_dt, '%a %b/%d %H:%M')}")
             owalert.send_push_notify(f"{description_title} from {alert_sender_name}",
                                      f"in {owalert.town} \n"
-                                     f"Expires: {datetime.strftime(alert_expire, '%a %b/%d %H:%M')}\n"
+                                     f"Expires: {datetime.strftime(owalert.alert_expires_dt, '%a %b/%d %H:%M')}\n"
                                      f"Alert Count: {alert_count}\n"
-                                     f"Currently: Temp: {temp}{get_temp_title()} "
-                                     f"Feels like: {feels_like}{get_temp_title()}\n"
+                                     f"Currently: Temp: {temp}{get_temp_string()} "
+                                     f"Feels like: {feels_like}{get_temp_string()}\n"
                                      f"Wind Speed: {wind_speed} {get_wind_speed()} "
                                      f"Wind Direction: {wind_direction}\n"
                                      f"{description}",
@@ -206,8 +204,8 @@ def main():
                                                  f"Expires: {datetime.strftime(notify_expire, '%a %b/%d %H:%M')}\n"
                                                  # f"Precipitation: {precip_prob}\n"
                                                  f"Rate: {rain_rate}/hr\n"
-                                                 f"Currently: Temp: {temp}{get_temp_title()} "
-                                                 f"Feels like: {feels_like}{get_temp_title()}\n"
+                                                 f"Currently: Temp: {temp}{get_temp_string()} "
+                                                 f"Feels like: {feels_like}{get_temp_string()}\n"
                                                  f"Wind Speed: {wind_speed} {get_wind_speed()} "
                                                  f"Wind Direction: {wind_direction}\n",
                                                  22,  # Morse Sound
@@ -226,8 +224,8 @@ def main():
                                                  f"Expires: {datetime.strftime(notify_expire, '%a %b/%d %H:%M')}\n"
                                                  # f"Precipitation: {precip_prob}\n"
                                                  f"Rate: {snow_rate}/hr\n"
-                                                 f"Currently: Temp: {temp}{get_temp_title()} "
-                                                 f"Feels like: {feels_like}{get_temp_title()}\n"
+                                                 f"Currently: Temp: {temp}{get_temp_string()} "
+                                                 f"Feels like: {feels_like}{get_temp_string()}\n"
                                                  f"Wind Speed: {wind_speed} {get_wind_speed()} "
                                                  f"Wind Direction: {wind_direction}\n",
                                                  22,  # Morse Sound
