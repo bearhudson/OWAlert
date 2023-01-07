@@ -200,7 +200,7 @@ def main():
                         owalert.send_push_notify("Rain Alert",
                                                  f"{str.title(owalert.owc.check_condition(cur_code))} "
                                                  f"in {owalert.town} \n"
-                                                 f"Expires: {datetime.strftime(notify_expire, '%a %b/%d %H:%M')}\n"
+                                                 f"Expires: {datetime.strftime(owalert.notify_expires_dt, '%a %b/%d %H:%M')}\n"
                                                  # f"Precipitation: {precip_prob}\n"
                                                  f"Rate: {rain_rate}/hr\n"
                                                  f"Currently: Temp: {temp}{get_temp_string()} "
@@ -220,7 +220,7 @@ def main():
                         owalert.send_push_notify("Snow Alert",
                                                  f"{str.title(owalert.owc.check_condition(cur_code))} "
                                                  f"in {owalert.town} \n"
-                                                 f"Expires: {datetime.strftime(notify_expire, '%a %b/%d %H:%M')}\n"
+                                                 f"Expires: {datetime.strftime(owalert.notify_expires_dt, '%a %b/%d %H:%M')}\n"
                                                  # f"Precipitation: {precip_prob}\n"
                                                  f"Rate: {snow_rate}/hr\n"
                                                  f"Currently: Temp: {temp}{get_temp_string()} "
