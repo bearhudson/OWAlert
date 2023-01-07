@@ -3,6 +3,7 @@ from _datetime import datetime
 from datetime import timedelta
 import requests
 import os
+import re
 
 from pyzipcode import ZipCodeDatabase
 from pushsafer import Client
@@ -15,6 +16,83 @@ ZIPCODE = os.getenv("ZIPCODE")
 COUNTRY_CODE = os.getenv("COUNTRY_CODE")
 UNITS = os.getenv("UNITS")
 SLEEP = 1800
+
+
+def get_temp_title() -> str:
+    if UNITS == 'metric':
+        return "°C"
+    if UNITS == 'imperial':
+        return "°F"
+
+def get_wind_speed() -> str:
+    if UNITS == 'metric':
+        return "kph"
+    if UNITS == 'imperial':
+        return "mph"
+
+def get_location_name() -> str:
+    location = requests.get(f"https://nominatim.openstreetmap.org/search?postalcode={ZIPCODE}&"
+                            f"format=json&addressdetails=1&country={COUNTRY_CODE}")
+    location.raise_for_status()
+    location_json = location.json()
+    location_str = location_json[-1]['display_name'].split(',')
+    return location_str[0]
+
+def precip_check(weather_slice: list) -> int:
+    duration = weather_slice[0]['dt']
+    for hour in weather_slice:
+        if hour['weather'][0]['id'] <= 800:
+            duration = hour['dt']
+        else:
+            break
+    return duration
+
+def get_condition_icon(code) -> int:
+    thunder_code = range(200, 230)
+    thunder_icon = 68
+    rain_code = range(300, 531)
+    rain_icon = 67
+    snow_code = range(600, 622)
+    snow_icon = 76
+    fog_code = range(701, 741)
+    fog_icon = 66
+    extreme_code = range(751, 781)
+    extreme_icon = 69
+    clear_icon = 64
+    cloud_code = range(801, 804)
+    cloud_icon = 65
+    if code in thunder_code:
+        return thunder_icon
+    if code in rain_code:
+        return rain_icon
+    if code in snow_code:
+        return snow_icon
+    if code in fog_code:
+        return fog_icon
+    if code in extreme_code:
+        return extreme_icon
+    if code in cloud_code:
+        return cloud_icon
+    if code == 800:
+        return clear_icon
+
+def get_cardinal_direction(degree: float) -> str:
+    if degree > 337.5 or degree <= 22.5:
+        return "N"
+    elif 22.5 < degree <= 67.5:
+        return "NE"
+    elif 67.5 < degree <= 112.5:
+        return "E"
+    elif 112.5 < degree <= 157.5:
+        return "SE"
+    elif 157.5 < degree <= 202.5:
+        return "S"
+    elif 202.5 < degree <= 247.5:
+        return "SW"
+    elif 247.5 < degree <= 292.5:
+        return "W"
+    elif 292.5 < degree <= 337.5:
+        return "NW"
 
 
 class OWAlertClass:
@@ -71,12 +149,16 @@ class OWAlertClass:
 
 
 def main():
-    owalert = OWAlertClass(api_key=OW_API_KEY, zipcode=ZIPCODE, units='imperial')
+    owalert = OWAlertClass(api_key=OW_API_KEY, zipcode=ZIPCODE, units=UNITS)
     # owalert.send_push_notify("Starting!", "Starting Daemon.", 24, 148)
     while True:
         hourly_weather = owalert.owc.weather_data['hourly']
         report_time = datetime.fromtimestamp(hourly_weather[0]['dt']) + timedelta(hours=owalert.tz_offset)
         print(f"Report for: {datetime.strftime(report_time, '%a %b/%d %H:%M')}")
+        temp = owalert.owc.weather_data['current']['temp']
+        feels_like = owalert.owc.weather_data['current']['feels_like']
+        wind_speed = owalert.owc.weather_data['current']['wind_speed']
+        wind_direction = get_cardinal_direction(owalert.owc.weather_data['current']['wind_deg'])
         if owalert.alert_expires_dt < owalert.request_dt:
             print("Alert Expired...")
             owalert.is_alerted = False
@@ -85,16 +167,21 @@ def main():
             owalert.is_alerted = False
         if 'alerts' in owalert.owc.weather_data and owalert.is_alerted is False:
             description_title = owalert.owc.weather_data['alerts'][0]['event']
-            description = owalert.owc.weather_data['alerts'][0]['description']
+            alert_sender_name = owalert.owc.weather_data['alerts'][0]['sender_name']
+            description = re.sub("\n", "", owalert.owc.weather_data['alerts'][0]['description'])
             alert_count = len(owalert.owc.weather_data['alerts'])
             owalert.update_expiry(notify_type='alert', expires=owalert.owc.weather_data['alerts'][0]['end'])
             alert_expire = owalert.alert_expires_dt + timedelta(hours=owalert.tz_offset)
-            print(f"{description_title}", f"in {owalert.town} "
-                                          f"Expires: {datetime.strftime(owalert.alert_expires_dt, '%a %b/%d %H:%M')}")
-            owalert.send_push_notify(f"{description_title}",
+            print(f"{description_title} from {alert_sender_name} in {owalert.town} "
+                  f"Expires: {datetime.strftime(owalert.alert_expires_dt, '%a %b/%d %H:%M')}")
+            owalert.send_push_notify(f"{description_title} from {alert_sender_name}",
                                      f"in {owalert.town} \n"
-                                     f"Expires {datetime.strftime(alert_expire, '%a %b/%d %H:%M')}\n"
-                                     f"Alert Count {alert_count}\n"
+                                     f"Expires: {datetime.strftime(alert_expire, '%a %b/%d %H:%M')}\n"
+                                     f"Alert Count: {alert_count}\n"
+                                     f"Currently: Temp: {temp}{get_temp_title()} "
+                                     f"Feels like: {feels_like}{get_temp_title()}\n"
+                                     f"Wind Speed: {wind_speed} {get_wind_speed()} "
+                                     f"Wind Direction: {wind_direction}\n"
                                      f"{description}",
                                      24, # Radio Tuner
                                      148) # "!" Icon
@@ -116,7 +203,11 @@ def main():
                                                  f"in {owalert.town} \n"
                                                  f"Expires: {datetime.strftime(notify_expire, '%a %b/%d %H:%M')}\n"
                                                  # f"Precipitation: {precip_prob}\n"
-                                                 f"Rate: {rain_rate}/hr\n",
+                                                 f"Rate: {rain_rate}/hr\n"
+                                                 f"Currently: Temp: {temp}{get_temp_title()} "
+                                                 f"Feels like: {feels_like}{get_temp_title()}\n"
+                                                 f"Wind Speed: {wind_speed} {get_wind_speed()} "
+                                                 f"Wind Direction: {wind_direction}\n",
                                                  22,  # Morse Sound
                                                  get_condition_icon(cur_code))
                         owalert.is_notified = True
@@ -132,62 +223,17 @@ def main():
                                                  f"in {owalert.town} \n"
                                                  f"Expires: {datetime.strftime(notify_expire, '%a %b/%d %H:%M')}\n"
                                                  # f"Precipitation: {precip_prob}\n"
-                                                 f"Rate: {snow_rate}/hr\n",
+                                                 f"Rate: {snow_rate}/hr\n"
+                                                 f"Currently: Temp: {temp}{get_temp_title()} "
+                                                 f"Feels like: {feels_like}{get_temp_title()}\n"
+                                                 f"Wind Speed: {wind_speed} {get_wind_speed()} "
+                                                 f"Wind Direction: {wind_direction}\n",
                                                  22,  # Morse Sound
                                                  get_condition_icon(cur_code))
                         owalert.is_notified = True
         print("Sleeping...")
         sleep(SLEEP)
         owalert.update_data()
-
-
-def get_location_name() -> str:
-    location = requests.get(f"https://nominatim.openstreetmap.org/search?postalcode={ZIPCODE}&"
-                            f"format=json&addressdetails=1&country={COUNTRY_CODE}")
-    location.raise_for_status()
-    location_json = location.json()
-    location_str = location_json[-1]['display_name'].split(',')
-    return location_str[0]
-
-
-def precip_check(weather_slice: list) -> int:
-    duration = weather_slice[0]['dt']
-    for hour in weather_slice:
-        if hour['weather'][0]['id'] <= 800:
-            duration = hour['dt']
-        else:
-            break
-    return duration
-
-
-def get_condition_icon(code) -> int:
-    thunder_code = range(200, 230)
-    thunder_icon = 68
-    rain_code = range(300, 531)
-    rain_icon = 67
-    snow_code = range(600, 622)
-    snow_icon = 76
-    fog_code = range(701, 741)
-    fog_icon = 66
-    extreme_code = range(751, 781)
-    extreme_icon = 69
-    clear_icon = 64
-    cloud_code = range(801, 804)
-    cloud_icon = 65
-    if code in thunder_code:
-        return thunder_icon
-    if code in rain_code:
-        return rain_icon
-    if code in snow_code:
-        return snow_icon
-    if code in fog_code:
-        return fog_icon
-    if code in extreme_code:
-        return extreme_icon
-    if code in cloud_code:
-        return cloud_icon
-    if code == 800:
-        return clear_icon
 
 
 if __name__ == "__main__":
