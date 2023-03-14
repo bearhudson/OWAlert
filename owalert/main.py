@@ -24,11 +24,13 @@ def get_temp_string() -> str:
     if UNITS == 'imperial':
         return "°F"
 
+
 def get_wind_speed() -> str:
     if UNITS == 'metric':
         return "kph"
     if UNITS == 'imperial':
         return "mph"
+
 
 def get_location_name() -> str:
     location = requests.get(f"https://nominatim.openstreetmap.org/search?postalcode={ZIPCODE}&"
@@ -37,6 +39,7 @@ def get_location_name() -> str:
     location_json = location.json()
     location_str = location_json[-1]['display_name'].split(',')
     return location_str[0]
+
 
 def precip_check(weather_slice: list) -> int:
     duration = weather_slice[0]['dt']
@@ -47,6 +50,7 @@ def precip_check(weather_slice: list) -> int:
 
             break
     return duration
+
 
 def get_condition_icon(code) -> int:
     thunder_code = range(200, 230)
@@ -76,6 +80,7 @@ def get_condition_icon(code) -> int:
         return cloud_icon
     if code == 800:
         return clear_icon
+
 
 def get_cardinal_direction(degree: float) -> str:
     if degree > 337.5 or degree <= 22.5:
@@ -153,7 +158,7 @@ def main():
     # owalert.send_push_notify("Starting!", "Starting Daemon.", 24, 148)
     while True:
         hourly_weather = owalert.owc.weather_data['hourly']
-        print(f"Report for: {datetime.strftime(owalert.request_dt_utc , '%a %b/%d %H:%M')}")
+        print(f"Report for: {datetime.strftime(owalert.request_dt_utc, '%a %b/%d %H:%M')}")
         temp = owalert.owc.weather_data['current']['temp']
         feels_like = owalert.owc.weather_data['current']['feels_like']
         wind_speed = owalert.owc.weather_data['current']['wind_speed']
@@ -182,8 +187,8 @@ def main():
                                      f"Wind Speed: {wind_speed} {get_wind_speed()} "
                                      f"Wind Direction: {wind_direction}\n"
                                      f"{description}",
-                                     24, # Radio Tuner
-                                     148) # "!" Icon
+                                     24,  # Radio Tuner
+                                     148)  # "!" Icon
             owalert.is_alerted = True
         if not owalert.is_notified:
             print("Checking Precip...")
