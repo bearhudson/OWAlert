@@ -20,6 +20,7 @@
 
 * You can setup environment variables and envoke main.py after building the Poetry virtual environment. Timezone data might be incorrect if your system clock is not set to UTC.
     ```bash
+    $ pip install poetry
     $ poetry install
     $ .venv/bin/python3 owawlert/main.py
     ```
