@@ -23,7 +23,12 @@
     $ poetry install
     $ .venv/bin/python3 owawlert/main.py
     ```
-* Docker is the prefered way to run this script. Execute run.sh^ to build and launch a local instance which reads the environment variables from a .env file you will need to create. The format for is VARIABLE=VALUE
+* Docker is the prefered way to run this script. Execute run.sh^ to build and launch a local instance which reads the environment variables from a .env file you will need to create. The format for is 
+
+    ```code
+    VARIABLE=VALUE
+    ```
+
     ```bash
     $ ./run.sh
     ```
