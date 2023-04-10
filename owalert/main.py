@@ -1,5 +1,5 @@
 from time import sleep
-from _datetime import datetime
+from datetime import datetime
 from datetime import timedelta
 import requests
 import os
@@ -171,7 +171,7 @@ def main():
         if 'alerts' in owalert.owc.weather_data and owalert.is_alerted is False:
             description_title = owalert.owc.weather_data['alerts'][0]['event']
             alert_sender_name = owalert.owc.weather_data['alerts'][0]['sender_name']
-            alert_expire = owalert.owc.weather_data['alerts'][0]['end']
+            alert_expire = datetime.fromtimestamp(owalert.owc.weather_data['alerts'][0]['end'])
             owalert.update_expiry(notify_type='alert', expires=alert_expire)
             description = re.sub("\n", " ", owalert.owc.weather_data['alerts'][0]['description'])
             alert_count = len(owalert.owc.weather_data['alerts'])
