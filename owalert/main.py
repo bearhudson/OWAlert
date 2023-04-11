@@ -114,10 +114,10 @@ class OWAlertClass:
         self.zcdb = ZipCodeDatabase()
         self.tz_offset = self.zcdb[ZIPCODE].timezone
 
-    def update_expiry(self, notify_type: str, expires: datetime):
-        if notify_type == 'alert':
+    def update_expiry(self, notify_type: int, expires: datetime):
+        if notify_type == 1:
             self.alert_expires_dt = expires
-        if notify_type == 'notify':
+        if notify_type == 2:
             self.notify_expires_dt = expires
 
     def send_push_notify(self, title: str,
@@ -172,7 +172,7 @@ def main():
             description_title = owalert.owc.weather_data['alerts'][0]['event']
             alert_sender_name = owalert.owc.weather_data['alerts'][0]['sender_name']
             alert_expire = datetime.fromtimestamp(owalert.owc.weather_data['alerts'][0]['end'])
-            owalert.update_expiry(notify_type='alert', expires=alert_expire)
+            owalert.update_expiry(notify_type=1, expires=alert_expire)
             description = re.sub("\n", " ", owalert.owc.weather_data['alerts'][0]['description'])
             alert_count = len(owalert.owc.weather_data['alerts'])
             owalert.send_push_notify(title=f"{description_title} from {alert_sender_name}",
@@ -196,7 +196,7 @@ def main():
                         print("Prepping notification...")
                         print(cur_code, owalert.is_notified)
                         notify_expire = datetime.fromtimestamp(precip_check(hourly_weather))
-                        owalert.update_expiry(notify_type='notify', expires=notify_expire)
+                        owalert.update_expiry(notify_type=2, expires=notify_expire)
                         rain_rate = owalert.owc.weather_data['current']['rain']['1h']
                         print("Sending rain notification...")
                         owalert.send_push_notify(title="Rain Alert",
@@ -216,7 +216,7 @@ def main():
                         print("Prepping notification...")
                         print(cur_code, owalert.is_notified)
                         notify_expire = datetime.fromtimestamp(precip_check(hourly_weather))
-                        owalert.update_expiry(notify_type='notify', expires=notify_expire)
+                        owalert.update_expiry(notify_type=2, expires=notify_expire)
                         snow_rate = owalert.owc.weather_data['current']['snow']['1h']
                         print("Sending snow notification...")
                         owalert.send_push_notify(title="Snow Alert",
