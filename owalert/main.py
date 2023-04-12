@@ -154,7 +154,6 @@ class OWAlertClass:
 
 def main():
     owalert = OWAlertClass(api_key=OW_API_KEY, zipcode=ZIPCODE, units=UNITS)
-    # owalert.send_push_notify("Starting!", "Starting Daemon.", 24, 148)
     while True:
         hourly_weather = owalert.owc.weather_data['hourly']
         print(f"Report for: {datetime.strftime(owalert.request_dt_utc, '%a %b/%d %H:%M')}")
@@ -162,12 +161,6 @@ def main():
         feels_like = owalert.owc.weather_data['current']['feels_like']
         wind_speed = owalert.owc.weather_data['current']['wind_speed']
         wind_direction = get_cardinal_direction(owalert.owc.weather_data['current']['wind_deg'])
-        if owalert.alert_expires_dt < owalert.request_dt_utc:
-            print("Alert Expired...")
-            owalert.is_alerted = False
-        if owalert.notify_expires_dt < owalert.request_dt_utc:
-            print("Notification Expired...")
-            owalert.is_alerted = False
         if 'alerts' in owalert.owc.weather_data and owalert.is_alerted is False:
             description_title = owalert.owc.weather_data['alerts'][0]['event']
             alert_sender_name = owalert.owc.weather_data['alerts'][0]['sender_name']
@@ -187,6 +180,12 @@ def main():
                                      msg_sound=24,  # Radio Tuner
                                      icon_type=148)  # "!" Icon
             owalert.is_alerted = True
+        if owalert.alert_expires_dt < owalert.request_dt_utc:
+            print("Alert Expired...")
+            owalert.is_alerted = False
+        if owalert.notify_expires_dt < owalert.request_dt_utc:
+            print("Notification Expired...")
+            owalert.is_alerted = False
         if not owalert.is_notified:
             print("Checking Precip...")
             cur_code = owalert.owc.weather_data['current']['weather'][0]['id']
@@ -203,7 +202,6 @@ def main():
                                                  message=f"{str.title(owalert.owc.check_condition(cur_code))} "
                                                  f"in {owalert.town} \n"
                                                  f"Ending: {datetime.strftime(owalert.notify_expires_dt, '%a %b/%d %H:%M')}\n"
-                                                 # f"Precipitation: {precip_prob}\n"
                                                  f"Rate: {rain_rate}/hr\n"
                                                  f"Currently: Temp: {temp}{get_temp_string()} "
                                                  f"Feels like: {feels_like}{get_temp_string()}\n"
@@ -223,7 +221,6 @@ def main():
                                                  message=f"{str.title(owalert.owc.check_condition(cur_code))} "
                                                  f"in {owalert.town} \n"
                                                  f"Ending: {datetime.strftime(owalert.notify_expires_dt, '%a %b/%d %H:%M')}\n"
-                                                 # f"Precipitation: {precip_prob}\n"
                                                  f"Rate: {snow_rate}/hr\n"
                                                  f"Currently: Temp: {temp}{get_temp_string()} "
                                                  f"Feels like: {feels_like}{get_temp_string()}\n"
